@@ -1,8 +1,10 @@
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import Joi from 'joi';
+import { AuthConfig } from "./auth.config";
 
 export interface ConfigType {
- database: TypeOrmModuleOptions;
+  database: TypeOrmModuleOptions;
+  auth: AuthConfig;
 }
 
 export const appConfigSchema = Joi.object({
@@ -12,4 +14,8 @@ export const appConfigSchema = Joi.object({
   DB_PASSWORD: Joi.string().required(),
   DB_DATABASE: Joi.string().required(),
   DB_SYNC: Joi.number().valid(0, 1).required(),
+  JWT_SECRET: Joi.string().required(),
+  JWT_EXPIRES_IN: Joi.string().required(),
+  JWT_REFRESH_SECRET: Joi.string().required(),
+  JWT_REFRESH_EXPIRES_IN: Joi.string().optional()
 });

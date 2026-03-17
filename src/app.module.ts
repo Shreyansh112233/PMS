@@ -8,12 +8,13 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user/entities/user.entity';
+import { authConfig } from './config/auth.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [typeORMConfig],
+      load: [typeORMConfig, authConfig],
       validationSchema: appConfigSchema,
       validationOptions: {
         allowUnknown: true,
@@ -35,4 +36,4 @@ import { User } from './user/entities/user.entity';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
