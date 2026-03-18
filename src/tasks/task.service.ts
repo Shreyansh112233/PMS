@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +16,8 @@ import { AssignTaskDto } from './dto/assign-task.dto';
 
 @Injectable()
 export class TaskService {
+  private readonly logger = new Logger(TaskService.name);
+
   constructor(
     @InjectRepository(TaskEntity)
     private readonly taskRepository: Repository<TaskEntity>,
@@ -40,7 +43,11 @@ export class TaskService {
       ...dto,
       projectId,
     });
-    return this.taskRepository.save(task);
+    const saved = await this.taskRepository.save(task);
+    this.logger.log(
+      `Task created: "${saved.title}" (${saved.id}) in project ${projectId} by user ${currentUserId}`,
+    );
+    return saved;
   }
 
   async findAllByProject(

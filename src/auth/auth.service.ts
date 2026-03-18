@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
@@ -13,7 +13,7 @@ import { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
-
+    private readonly logger = new Logger(AuthService.name);
 
     constructor(@InjectRepository(User) private userRepository: Repository<User>,
         private readonly jwtService: JwtService,
@@ -22,18 +22,23 @@ export class AuthService {
 
     async login(loginDto: LoginDto) {
         const { email, password } = loginDto;
+        this.logger.log(`Login attempt for email: ${email}`);
+
         const user = await this.userRepository.findOne({ where: { email } });
         if (!user) {
+            this.logger.warn(`Login failed - user not found: ${email}`);
             throw new UnauthorizedException('Invalid email or password');
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
+            this.logger.warn(`Login failed - invalid password for: ${email}`);
             throw new UnauthorizedException('Invalid email or password');
         }
         const payload: JwtPayload = { sub: user.id, email: user.email };
         const tokens = await this.generateTokens(payload);
         await this.updateRefreshToken(user.id, tokens.refreshToken);
 
+        this.logger.log(`Login successful for: ${email}`);
         return tokens;
     }
 
