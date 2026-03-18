@@ -1,6 +1,7 @@
 import { Exclude } from "class-transformer";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { TaskStatus } from "../enums/task.status";
+import { TaskPriority } from "../enums/task.priority";
 import { Project } from "../../projects/entities/project.entity";
 import { User } from "../../user/entities/user.entity";
 import { CommentEntity } from "../../comments/entities/comment.entity";
@@ -34,7 +35,7 @@ export class TaskEntity {
     project: Project;
 
     @Column({
-        nullable: false,
+        nullable: true,
         type: 'uuid',
     })
     assignedTo: string;
@@ -57,6 +58,14 @@ export class TaskEntity {
         default: TaskStatus.TODO,
     })
     status: TaskStatus;
+
+    @Column({
+        type: 'enum',
+        nullable: false,
+        enum: TaskPriority,
+        default: TaskPriority.MEDIUM,
+    })
+    priority: TaskPriority;
 
     @CreateDateColumn()
     createdAt: Date;

@@ -7,6 +7,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { appConfigSchema, ConfigType } from './config/config.type';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { ProjectModule } from './projects/project.module';
+import { TaskModule } from './tasks/task.module';
+import { CommentModule } from './comments/comment.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user/entities/user.entity';
 import { Project } from './projects/entities/project.entity';
@@ -37,6 +40,9 @@ import { authConfig } from './config/auth.config';
     }),
     AuthModule,
     UserModule,
+    ProjectModule,
+    TaskModule,
+    CommentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
