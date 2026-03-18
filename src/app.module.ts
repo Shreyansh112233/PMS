@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -8,6 +9,10 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user/entities/user.entity';
+import { Project } from './projects/entities/project.entity';
+import { TaskEntity } from './tasks/entities/task.entities';
+import { CommentEntity } from './comments/entities/comment.entity';
+import { LabelEntity } from './labels/entities/label.entity';
 import { authConfig } from './config/auth.config';
 
 @Module({
@@ -27,7 +32,7 @@ import { authConfig } from './config/auth.config';
       useFactory: (configService: ConfigService<ConfigType>) => ({
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         ...configService.get('database'),
-        entities: [User],
+        entities: [User, Project, TaskEntity, CommentEntity, LabelEntity],
       }),
     }),
     AuthModule,

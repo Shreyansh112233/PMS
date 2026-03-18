@@ -1,8 +1,11 @@
-import { Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Entity, DeleteDateColumn } from "typeorm";
-import { RoleType } from "../enum/role-type";
+import { Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Entity, DeleteDateColumn, OneToMany, ManyToMany } from "typeorm";
+import { RoleType } from "../enum/role.type";
 import { Exclude } from "class-transformer";
+import { Project } from "../../projects/entities/project.entity";
+import { TaskEntity } from "../../tasks/entities/task.entities";
+import { CommentEntity } from "../../comments/entities/comment.entity";
 
-@Entity('user')
+@Entity('users')
 export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -40,6 +43,18 @@ export class User {
         default: RoleType.USER,
     })
     role: RoleType;
+
+    @OneToMany(() => Project, (project) => project.owner)
+    ownedProjects: Project[];
+
+    @ManyToMany(() => Project, (project) => project.members)
+    projects: Project[];
+
+    @OneToMany(() => TaskEntity, (task) => task.assignee)
+    assignedTasks: TaskEntity[];
+
+    @OneToMany(() => CommentEntity, (comment) => comment.user)
+    comments: CommentEntity[];
 
     @Exclude()
     @CreateDateColumn()
