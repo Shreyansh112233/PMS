@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,12 +16,22 @@ import { TaskEntity } from './tasks/entities/task.entities';
 import { CommentEntity } from './comments/entities/comment.entity';
 import { LabelEntity } from './labels/entities/label.entity';
 import { authConfig } from './config/auth.config';
+import { redisConfig } from './config/redis.config';
+import { RedisModule } from './redis/redis.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-ioredis-yet';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import Redis from 'ioredis';
+import { APP_GUARD } from '@nestjs/core';
+import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [typeORMConfig, authConfig],
+      load: [typeORMConfig, authConfig, redisConfig],
       validationSchema: appConfigSchema,
       validationOptions: {
         allowUnknown: true,
@@ -38,6 +47,36 @@ import { authConfig } from './config/auth.config';
         entities: [User, Project, TaskEntity, CommentEntity, LabelEntity],
       }),
     }),
+    RedisModule,
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService<ConfigType>) => {
+        const redisConf = config.get('redis', { infer: true })!;
+        return {
+          store: await redisStore({
+            host: redisConf.host,
+            port: redisConf.port,
+          }),
+          ttl: 300_000, // default 300s in ms
+        };
+      },
+    }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<ConfigType>) => {
+        const redisConf = config.get('redis', { infer: true })!;
+        return {
+          throttlers: [{ name: 'default', ttl: 60_000, limit: 100 }],
+          storage: new ThrottlerStorageRedisService(
+            new Redis({ host: redisConf.host, port: redisConf.port }),
+          ),
+        };
+      },
+    }),
+    CommonModule,
     AuthModule,
     UserModule,
     ProjectModule,
@@ -45,6 +84,9 @@ import { authConfig } from './config/auth.config';
     CommentModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: CustomThrottlerGuard },
+  ],
 })
-export class AppModule { }
+export class AppModule {}

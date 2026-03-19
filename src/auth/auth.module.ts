@@ -7,9 +7,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigType } from 'src/config/config.type';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { RefreshTokenService } from './refresh-token.service';
 
 @Module({
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy, RefreshTokenService],
   controllers: [AuthController],
   imports: [
     ConfigModule,
@@ -28,6 +31,7 @@ import { ConfigType } from 'src/config/config.type';
         };
       },
     }),
-  ]
+  ],
+  exports: [RefreshTokenService],
 })
 export class AuthModule {}

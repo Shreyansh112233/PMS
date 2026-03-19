@@ -1,10 +1,12 @@
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import Joi from 'joi';
 import { AuthConfig } from "./auth.config";
+import { RedisConfig } from "./redis.config";
 
 export interface ConfigType {
   database: TypeOrmModuleOptions;
   auth: AuthConfig;
+  redis: RedisConfig;
 }
 
 export const appConfigSchema = Joi.object({
@@ -17,5 +19,7 @@ export const appConfigSchema = Joi.object({
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRES_IN: Joi.string().required(),
   JWT_REFRESH_SECRET: Joi.string().required(),
-  JWT_REFRESH_EXPIRES_IN: Joi.string().optional()
+  JWT_REFRESH_EXPIRES_IN: Joi.string().optional(),
+  REDIS_HOST: Joi.string().default('localhost'),
+  REDIS_PORT: Joi.number().default(6379),
 });

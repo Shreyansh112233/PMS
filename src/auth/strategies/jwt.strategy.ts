@@ -10,6 +10,7 @@ import { User } from 'src/user/entities/user.entity';
 export interface JwtPayload {
   sub: string;
   email: string;
+  tokenId?: string; // present only in refresh tokens
 }
 
 @Injectable()

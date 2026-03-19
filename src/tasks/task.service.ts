@@ -13,6 +13,10 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { AssignTaskDto } from './dto/assign-task.dto';
+import { CacheService } from '../common/services/cache.service';
+import { CacheKeys } from '../common/utils/cache-keys';
+
+const CACHE_TTL_MS = 120_000; // 2 minutes
 
 @Injectable()
 export class TaskService {
@@ -25,6 +29,7 @@ export class TaskService {
     private readonly projectRepository: Repository<Project>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly cacheService: CacheService,
   ) {}
 
   async create(
@@ -47,6 +52,7 @@ export class TaskService {
     this.logger.log(
       `Task created: "${saved.title}" (${saved.id}) in project ${projectId} by user ${currentUserId}`,
     );
+    await this.cacheService.del(CacheKeys.tasksByProject(projectId));
     return saved;
   }
 
@@ -57,10 +63,16 @@ export class TaskService {
     const project = await this.findProject(projectId);
     this.assertMemberOrOwner(project, currentUserId);
 
-    return this.taskRepository.find({
+    const cacheKey = CacheKeys.tasksByProject(projectId);
+    const cached = await this.cacheService.get<TaskEntity[]>(cacheKey);
+    if (cached) return cached;
+
+    const tasks = await this.taskRepository.find({
       where: { projectId },
       relations: ['assignee'],
     });
+    await this.cacheService.set(cacheKey, tasks, CACHE_TTL_MS);
+    return tasks;
   }
 
   async update(
@@ -77,7 +89,9 @@ export class TaskService {
     }
 
     Object.assign(task, dto);
-    return this.taskRepository.save(task);
+    const saved = await this.taskRepository.save(task);
+    await this.cacheService.del(CacheKeys.tasksByProject(task.projectId));
+    return saved;
   }
 
   async updateStatus(
@@ -90,7 +104,9 @@ export class TaskService {
     this.assertMemberOrOwner(project, currentUserId);
 
     task.status = dto.status;
-    return this.taskRepository.save(task);
+    const saved = await this.taskRepository.save(task);
+    await this.cacheService.del(CacheKeys.tasksByProject(task.projectId));
+    return saved;
   }
 
   async assign(
@@ -104,7 +120,9 @@ export class TaskService {
     await this.findUser(dto.assignedTo);
 
     task.assignedTo = dto.assignedTo;
-    return this.taskRepository.save(task);
+    const saved = await this.taskRepository.save(task);
+    await this.cacheService.del(CacheKeys.tasksByProject(task.projectId));
+    return saved;
   }
 
   private async findTask(taskId: string): Promise<TaskEntity> {

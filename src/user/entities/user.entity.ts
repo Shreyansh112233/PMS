@@ -29,9 +29,11 @@ export class User {
     })
     password: string;
 
+    // Deprecated: refresh tokens are now stored in Redis. Column kept for backward compatibility.
     @Exclude()
     @Column({
         nullable: true,
+        select: false,
     })
     refreshToken: string;
 

@@ -1,20 +1,16 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { ConfigType } from 'src/config/config.type';
 import { JwtPayload } from './jwt.strategy';
-import { User } from 'src/user/entities/user.entity';
+import { RefreshTokenService } from '../refresh-token.service';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly refreshTokenService: RefreshTokenService,
     config: ConfigService<ConfigType>,
   ) {
     super({
@@ -26,25 +22,27 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
   }
 
   async validate(req: Request, payload: JwtPayload) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const refreshToken = req.body.refreshToken;
 
-    const user = await this.userRepository.findOne({
-      where: { id: payload.sub },
-      select: ['id', 'email', 'refreshToken'],
-    });
-
-    if (!user || !user.refreshToken) {
-      throw new UnauthorizedException();
+    if (!payload.tokenId) {
+      throw new UnauthorizedException('Invalid refresh token format');
     }
 
-    const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
-    if (!isRefreshTokenValid) {
-      throw new UnauthorizedException();
+    const isValid = await this.refreshTokenService.validateToken(
+      payload.sub,
+      payload.tokenId,
+      refreshToken,
+    );
+
+    if (!isValid) {
+      throw new UnauthorizedException('Refresh token revoked or invalid');
     }
 
     return {
-      id: user.id,
-      email: user.email,
+      id: payload.sub,
+      email: payload.email,
+      tokenId: payload.tokenId,
       refreshToken,
     };
   }
