@@ -27,10 +27,16 @@ export class CommentService {
       userId,
     });
     const saved = await this.commentRepository.save(comment);
-    return this.commentRepository.findOne({
-      where: { id: saved.id },
-      relations: ['user'],
-    });
+    const result = await this.commentRepository.findOne({
+  where: { id: saved.id },
+  relations: ['user'],
+});
+
+if (!result) {
+  throw new Error('Comment not found after save');
+}
+
+return result;
   }
 
   async findAllByTask(taskId: string): Promise<CommentEntity[]> {
