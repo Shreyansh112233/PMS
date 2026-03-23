@@ -25,6 +25,7 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
 import Redis from 'ioredis';
 import { APP_GUARD } from '@nestjs/core';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
+import { ScheduleModule } from '@nestjs/schedule';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -76,6 +77,7 @@ import { CommonModule } from './common/common.module';
         };
       },
     }),
+    ScheduleModule.forRoot(),
     CommonModule,
     AuthModule,
     UserModule,
